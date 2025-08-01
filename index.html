@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HJKL.IN - Navigate Your Code</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background: #0a0a0a;
+            color: #ff6b35;
+            overflow-x: hidden;
+            cursor: none;
+        }
+        
+        /* Custom cursor */
+        .cursor {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background: #ff6b35;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: difference;
+            transition: transform 0.1s ease;
+        }
+        
+        /* Matrix-style background */
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+        }
+        
+        /* Scanlines effect */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(255, 107, 53, 0.05) 2px,
+                rgba(255, 107, 53, 0.05) 4px
+            );
+            pointer-events: none;
+            z-index: 1;
+        }
+        
+        .container {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 2rem;
+            position: relative;
+            z-index: 2;
+        }
+        
+        .logo-section {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: glitch 0.3s linear infinite alternate-reverse;
+        }
+        
+        .logo {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .logo-char {
+            width: 80px;
+            height: 80px;
+            border: 3px solid #ff6b35;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: rgba(255, 107, 53, 0.1);
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.3);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .logo-char::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 107, 53, 0.1), transparent);
+            transform: rotate(45deg);
+            transition: transform 0.6s;
+        }
+        
+        .logo-char:hover {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 0 30px rgba(255, 107, 53, 0.6);
+        }
+        
+        .logo-char:hover::before {
+            transform: rotate(45deg) translate(50%, 50%);
+        }
+        
+        .terminal-line {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+            background: rgba(255, 107, 53, 0.05);
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            border-left: 3px solid #ff6b35;
+        }
+        
+        .cursor-blink {
+            animation: blink 1s infinite;
+        }
+        
+        .hero-text {
+            text-align: center;
+            max-width: 800px;
+            margin-bottom: 3rem;
+        }
+        
+        .hero-title {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 1rem;
+            text-shadow: 0 0 10px rgba(255, 107, 53, 0.5);
+            animation: pulse 2s ease-in-out infinite alternate;
+        }
+        
+        .hero-subtitle {
+            font-size: 1.2rem;
+            color: rgba(255, 107, 53, 0.8);
+            margin-bottom: 1rem;
+        }
+        
+        .typewriter {
+            font-size: 1rem;
+            color: rgba(255, 107, 53, 0.6);
+            min-height: 1.5rem;
+        }
+        
+        .cta-section {
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 3rem;
+        }
+        
+        .cta-button {
+            padding: 1rem 2rem;
+            background: transparent;
+            border: 2px solid #ff6b35;
+            color: #ff6b35;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cta-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: #ff6b35;
+            transition: left 0.3s ease;
+            z-index: -1;
+        }
+        
+        .cta-button:hover {
+            color: #0a0a0a;
+            box-shadow: 0 0 20px rgba(255, 107, 53, 0.5);
+        }
+        
+        .cta-button:hover::before {
+            left: 0;
+        }
+        
+        .coming-soon-content {
+            text-align: center;
+            margin-bottom: 3rem;
+            max-width: 600px;
+        }
+        
+        .status-line {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-bottom: 2rem;
+            font-size: 1rem;
+            color: rgba(255, 107, 53, 0.8);
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            background: #ff6b35;
+            border-radius: 50%;
+            animation: pulse-dot 2s infinite;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: rgba(255, 107, 53, 0.2);
+            border-radius: 2px;
+            margin-bottom: 2rem;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #ff6b35, #ff8c42);
+            border-radius: 2px;
+            width: 0%;
+            animation: progress-load 3s ease-in-out infinite;
+        }
+        
+        .coming-soon-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: rgba(255, 107, 53, 0.7);
+        }
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            width: 100%;
+        }
+        
+        .feature-card {
+            background: rgba(255, 107, 53, 0.05);
+            border: 1px solid rgba(255, 107, 53, 0.2);
+            border-radius: 8px;
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+        
+        .feature-card:hover {
+            background: rgba(255, 107, 53, 0.1);
+            border-color: #ff6b35;
+            transform: translateY(-5px);
+        }
+        
+        .feature-icon {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+        
+        .feature-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+        
+        .feature-desc {
+            color: rgba(255, 107, 53, 0.7);
+            font-size: 0.9rem;
+        }
+        
+        @keyframes pulse-dot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(1.2); }
+        }
+        
+        @keyframes progress-load {
+            0% { width: 0%; }
+            50% { width: 75%; }
+            100% { width: 45%; }
+        }
+        
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+            100% { transform: translate(0); }
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        @keyframes pulse {
+            from { text-shadow: 0 0 10px rgba(255, 107, 53, 0.5); }
+            to { text-shadow: 0 0 20px rgba(255, 107, 53, 0.8), 0 0 30px rgba(255, 107, 53, 0.3); }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        /* Mobile responsiveness */
+        @media (max-width: 768px) {
+            .hero-title {
+                font-size: 2rem;
+            }
+            
+            .logo-char {
+                width: 60px;
+                height: 60px;
+                font-size: 1.8rem;
+            }
+            
+            .cta-section {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Glitch text effect */
+        .glitch-typewriter {
+            position: relative;
+            animation: glitch 0.8s infinite alternate-reverse;
+        }
+        
+        .glitch-typewriter::before,
+        .glitch-typewriter::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            animation: none;
+        }
+        
+        .glitch-typewriter::before {
+            animation: glitch-1 0.8s infinite;
+            color: #ff0040;
+            z-index: -1;
+            clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+        }
+        
+        .glitch-typewriter::after {
+            animation: glitch-2 0.8s infinite;
+            color: #00ff80;
+            z-index: -2;
+            clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+        }
+        
+        .hero-title.typing::after {
+            content: '_';
+            animation: blink 0.7s infinite;
+            color: #ff6b35;
+        }
+        
+        .glitch {
+            position: relative;
+        }
+        
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        
+        .glitch::before {
+            animation: glitch-1 0.5s infinite;
+            color: #ff0040;
+            z-index: -1;
+        }
+        
+        .glitch::after {
+            animation: glitch-2 0.5s infinite;
+            color: #00ff80;
+            z-index: -2;
+        }
+        
+        @keyframes glitch-1 {
+            0%, 14%, 15%, 49%, 50%, 99%, 100% {
+                transform: translate(0, 0);
+            }
+            15%, 49% {
+                transform: translate(-2px, -2px);
+            }
+        }
+        
+        @keyframes glitch-2 {
+            0%, 20%, 21%, 62%, 63%, 99%, 100% {
+                transform: translate(0, 0);
+            }
+            21%, 62% {
+                transform: translate(2px, 2px);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="cursor"></div>
+    <div class="matrix-bg"></div>
+    <div class="scanlines"></div>
+    
+    <div class="container">
+        <div class="logo-section floating">
+            <div class="logo">
+                <div class="logo-char">H</div>
+                <div class="logo-char">J</div>
+                <div class="logo-char">K</div>
+                <div class="logo-char">L</div>
+            </div>
+            <div class="terminal-line">&gt; hjkl.in<span class="cursor-blink">_</span></div>
+        </div>
+        
+        <div class="hero-text">
+            <h1 class="hero-title" data-text="" id="coming-soon-title"></h1>
+            <p class="hero-subtitle">Building the future of developer tools and experiences</p>
+            <div class="typewriter" id="typewriter"></div>
+        </div>
+        
+        <div class="coming-soon-content">
+            <div class="status-line">
+                <span class="status-indicator">●</span>
+                <span>System Status: Under Development</span>
+            </div>
+            
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            
+            <p class="coming-soon-text">
+                We're crafting something extraordinary for the developer community.<br>
+                Stay tuned for innovative tools and products that will revolutionize your workflow.
+            </p>
+        </div>
+        
+    </div>
+
+    <script>
+        // Custom cursor
+        const cursor = document.querySelector('.cursor');
+        document.addEventListener('mousemove', (e) => {
+            cursor.style.left = e.clientX + 'px';
+            cursor.style.top = e.clientY + 'px';
+        });
+
+        // Matrix rain effect
+        function createMatrixRain() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const matrixBg = document.querySelector('.matrix-bg');
+            matrixBg.appendChild(canvas);
+
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const chars = 'HJKL0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+            const charArray = chars.split('');
+            const fontSize = 14;
+            const columns = canvas.width / fontSize;
+            const drops = [];
+
+            for (let i = 0; i < columns; i++) {
+                drops[i] = 1;
+            }
+
+            function draw() {
+                ctx.fillStyle = 'rgba(10, 10, 10, 0.04)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = '#ff6b35';
+                ctx.font = fontSize + 'px JetBrains Mono';
+
+                for (let i = 0; i < drops.length; i++) {
+                    const text = charArray[Math.floor(Math.random() * charArray.length)];
+                    ctx.fillText(text, i * fontSize, drops[i] * fontSize);
+
+                    if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                }
+            }
+
+            setInterval(draw, 100);
+        }
+
+        // Coming Soon title typewriter with glitch
+        function typeComingSoon() {
+            const titleElement = document.getElementById('coming-soon-title');
+            const text = 'COMING SOON';
+            let charIndex = 0;
+            
+            // Start with empty content
+            titleElement.textContent = '';
+            titleElement.classList.add('typing');
+            titleElement.setAttribute('data-text', '');
+            
+            function typeChar() {
+                if (charIndex < text.length) {
+                    const currentText = text.substring(0, charIndex + 1);
+                    titleElement.textContent = currentText;
+                    titleElement.setAttribute('data-text', currentText);
+                    
+                    // Add random glitch effect during typing
+                    if (Math.random() > 0.6) {
+                        titleElement.classList.add('glitch-typewriter');
+                        setTimeout(() => {
+                            titleElement.classList.remove('glitch-typewriter');
+                        }, 200);
+                    }
+                    
+                    charIndex++;
+                    // Variable typing speed for more dramatic effect
+                    const delay = charIndex === text.length ? 800 : 120 + Math.random() * 150;
+                    setTimeout(typeChar, delay);
+                } else {
+                    // Finished typing - add permanent glitch effect
+                    titleElement.classList.remove('typing');
+                    titleElement.classList.add('glitch');
+                    titleElement.setAttribute('data-text', text);
+                    
+                    // Final dramatic glitch burst
+                    setTimeout(() => {
+                        titleElement.classList.add('glitch-typewriter');
+                        setTimeout(() => {
+                            titleElement.classList.remove('glitch-typewriter');
+                        }, 400);
+                    }, 300);
+                }
+            }
+            
+            // Start typing immediately when page loads
+            setTimeout(typeChar, 800);
+        }
+
+        // Typewriter effect
+        const typewriterText = [
+            'const future = await hjkl.build();',
+            'System.initialize("developer_tools");',
+            'if (innovation === true) { launch(); }',
+            'echo "Something amazing is coming...";',
+            '// TODO: Change the world',
+            'npm install @hjkl/awesome-tools'
+        ];
+
+        let textIndex = 0;
+        let charIndex = 0;
+        const typewriterElement = document.getElementById('typewriter');
+
+        function typeWriter() {
+            if (charIndex < typewriterText[textIndex].length) {
+                typewriterElement.textContent += typewriterText[textIndex].charAt(charIndex);
+                charIndex++;
+                setTimeout(typeWriter, 100);
+            } else {
+                setTimeout(() => {
+                    typewriterElement.textContent = '';
+                    charIndex = 0;
+                    textIndex = (textIndex + 1) % typewriterText.length;
+                    typeWriter();
+                }, 2000);
+            }
+        }
+
+        // Interactive logo chars
+        document.querySelectorAll('.logo-char').forEach((char, index) => {
+            char.addEventListener('mouseenter', () => {
+                char.style.transform = 'scale(1.2) rotate(' + (Math.random() * 20 - 10) + 'deg)';
+                char.style.boxShadow = '0 0 40px rgba(255, 107, 53, 0.8)';
+            });
+            
+            char.addEventListener('mouseleave', () => {
+                char.style.transform = 'scale(1) rotate(0deg)';
+                char.style.boxShadow = '0 0 20px rgba(255, 107, 53, 0.3)';
+            });
+
+            // Keyboard navigation simulation
+            char.addEventListener('click', () => {
+                const keys = ['H', 'J', 'K', 'L'];
+                const currentKey = keys[index];
+                
+                // Show navigation hint
+                const hint = document.createElement('div');
+                hint.textContent = `${currentKey} key pressed!`;
+                hint.style.position = 'absolute';
+                hint.style.top = '-40px';
+                hint.style.left = '50%';
+                hint.style.transform = 'translateX(-50%)';
+                hint.style.background = '#ff6b35';
+                hint.style.color = '#0a0a0a';
+                hint.style.padding = '0.5rem';
+                hint.style.borderRadius = '4px';
+                hint.style.fontSize = '0.8rem';
+                hint.style.whiteSpace = 'nowrap';
+                hint.style.zIndex = '1000';
+                
+                char.style.position = 'relative';
+                char.appendChild(hint);
+                
+                setTimeout(() => {
+                    hint.remove();
+                }, 1000);
+            });
+        });
+
+        // Subscribe button interaction
+        document.getElementById('subscribe-btn').addEventListener('click', (e) => {
+            e.preventDefault();
+            const btn = e.target;
+            const originalText = btn.textContent;
+            
+            btn.textContent = 'Subscribed!';
+            btn.style.background = '#ff6b35';
+            btn.style.color = '#0a0a0a';
+            
+            setTimeout(() => {
+                btn.textContent = originalText;
+                btn.style.background = 'transparent';
+                btn.style.color = '#ff6b35';
+            }, 2000);
+        });
+
+        // Initialize effects
+        typeComingSoon();
+        createMatrixRain();
+        setTimeout(typeWriter, 3000); // Start after coming soon is typed
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            const canvas = document.querySelector('.matrix-bg canvas');
+            if (canvas) {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+        });
+
+        // Easter egg: Konami code detection
+        let konamiCode = [];
+        const konamiSequence = ['ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'KeyB', 'KeyA'];
+        
+        document.addEventListener('keydown', (e) => {
+            konamiCode.push(e.code);
+            if (konamiCode.length > konamiSequence.length) {
+                konamiCode.shift();
+            }
+            
+            if (JSON.stringify(konamiCode) === JSON.stringify(konamiSequence)) {
+                document.body.style.animation = 'glitch 0.1s linear infinite';
+                setTimeout(() => {
+                    document.body.style.animation = '';
+                    alert('🎉 Konami Code activated! You are a true navigator!');
+                }, 2000);
+                konamiCode = [];
+            }
+        });
+    </script>
+</body>
+</html>
